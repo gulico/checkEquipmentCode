@@ -209,12 +209,14 @@ class checkCode(QtCore.QThread):
             if self.DC_type == '风电':
                 for name, group in groupby_SBM:
                     if not (name[0:2].isalpha()):
-                        self._signal_toTextEdit.emit('错误设备码F2：' + name + ' 设备码F2前2位应全为字母')
-                        #self.setError(sheet_name, '', '系统码', name, '系统码长度不为5，请调整系统码长度为5')
+                        self._signal_toTextEdit.emit('错误设备码：' + name + ' 设备码前2位应全为字母')
+                        self.setError(sheet_name, '', '设备码', name, '设备码前2位应全为字母')
                     if not (name[2:5].isdigit()):
-                        self._signal_toTextEdit.emit('错误设备码F2：' + name + ' 设备码F2后3位应全为数字')
+                        self._signal_toTextEdit.emit('错误设备码：' + name + ' 设备码后3位应全为数字')
+                        self.setError(sheet_name, '', '设备码', name, '设备码后3位应全为数字')
                     if not len(name) == 5:
-                        self._signal_toTextEdit.emit('错误设备码F2：' + name + ' 设备码F2长度不为5，请调整设备码F2长度为5')
+                        self._signal_toTextEdit.emit('错误设备码：' + name + ' 设备码长度不为5，请调整设备码长度为5')
+                        self.setError(sheet_name, '', '设备码', name, '设备码长度不为5，请调整设备码长度为5')
             # 所用设备码均在设备码模板中有
             tree_tmp = self.SBM_tree['设备/产品分类码'].to_list()
 
@@ -223,8 +225,8 @@ class checkCode(QtCore.QThread):
                 if not (isinstance(row['设备码F2'], str)):  # 跳过NAN空值
                     continue
                 if not (row['设备码F2'][0:2] in tree_tmp):
-                    self._signal_toTextEdit.emit('设备码F2在设备编码模板中不存在！序号：' + str(row['序号']) + ' 设备码F2：' + str(row['设备码F2']))
-
+                    self._signal_toTextEdit.emit('设备码在设备编码模板中不存在！序号：' + str(row['序号']) + ' 设备码F2：' + str(row['设备码F2']))
+                    self.setError(sheet_name, str(row['序号']), '设备码', str(row['设备码F2']), '设备码在设备编码模板中不存在！')
             # 光伏逆变器、汇流箱、组串和支架等有特殊规则，按其规则仔细检查
             SBM_list = []
             for name, group in groupby_SBM:
