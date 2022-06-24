@@ -13,6 +13,7 @@ class checkCode(QtCore.QThread):
     singlevalue = 0
     pvalue = 0
     uncheckedFilePath = ''
+    checkData = []
     # 通过类成员对象定义信号对象
     _signal_toTextEdit = pyqtSignal(str)
     _signal_toProgressBar = pyqtSignal(int)
@@ -74,25 +75,35 @@ class checkCode(QtCore.QThread):
             except Exception as e:
                 self._signal_toTextEdit.emit(str(e.args))
                 self._signal_toTextEdit.emit('请确认待检测设备码excel文件中是否有空sheet，且每个sheet的字段为15个，没有缺少序号等必要字段，顺序必须与模板统一')
-                continue
-            self.duplicateCheck(sheet)
-            self.reProgressBarvalue()
-            self.OCheck(sheet)
-            self.reProgressBarvalue()
-            self.factoryCodeCheck(sheet)
-            self.reProgressBarvalue()
-            self.QCMCodeCheck(sheet)
-            self.reProgressBarvalue()
-            self.XTMCodeCheck(sheet)
-            self.reProgressBarvalue()
-            self.SBMCodeCheck(sheet)
-            self.reProgressBarvalue()
-            self.CPMCodeCheck(sheet)
-            self.reProgressBarvalue()
-            self.SBCJCheck(sheet)
-            self.reProgressBarvalue()
+                break
 
-    def duplicateCheck(self, sheet):  # 重码检查
+            self.duplicateCheck(sheet_name, sheet)
+            self.reProgressBarvalue()
+            self.OCheck(sheet_name, sheet)
+            self.reProgressBarvalue()
+            self.factoryCodeCheck(sheet_name, sheet)
+            self.reProgressBarvalue()
+            self.QCMCodeCheck(sheet_name, sheet)
+            self.reProgressBarvalue()
+            self.XTMCodeCheck(sheet_name, sheet)
+            # self.reProgressBarvalue()
+            # self.SBMCodeCheck(sheet_name, sheet)
+            # self.reProgressBarvalue()
+            # self.CPMCodeCheck(sheet_name, sheet)
+            # self.reProgressBarvalue()
+            # self.SBCJCheck(sheet_name, sheet)
+            # self.reProgressBarvalue()
+
+    def setError(self, sheet_name, num, errorType, errorCode, errorContent):
+        error = {'sheet': sheet_name,
+                 '序号': num,
+                 '错误类型': errorType,
+                 '错误内容': errorCode,
+                 '详细错误和修改建议': errorContent}
+        for e in error:
+            self.checkData.append(e)
+
+    def duplicateCheck(self, sheet_name, sheet):  # 重码检查
         try:
             self._signal_toTextEdit.emit('################开始重码检查################')
             mark = sheet.duplicated(subset=['组合'], keep=False)
@@ -100,11 +111,14 @@ class checkCode(QtCore.QThread):
             self._signal_toTextEdit.emit('重码条数：' + str(len(repeatCode)))
             for index, row in repeatCode.iterrows():
                 self._signal_toTextEdit.emit('序号：' + str(row['序号']) + ' 组合：' + str(row['组合']))
+                self.setError(sheet_name, str(row['序号']), '重码', str(row['组合']), '')
+            if len(repeatCode) == 0:
+                self._signal_toTextEdit.emit('没有重码！')
             self._signal_toTextEdit.emit('################完成重码检查################')
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
 
-    def OCheck(self, sheet):  # 重码检查
+    def OCheck(self, sheet_name, sheet):  # 重码检查
         try:
             self._signal_toTextEdit.emit('################开始字母欧（O）和数字0检查################')
             tmpsheet = sheet.fillna('-')
@@ -112,51 +126,60 @@ class checkCode(QtCore.QThread):
             for index, row in containO.iterrows():
                 self._signal_toTextEdit.emit('包含字母欧（O）的记录：')
                 self._signal_toTextEdit.emit('序号：' + str(row['序号']) + ' 组合：' + str(row['组合']))
+                self.setError(sheet_name, str(row['序号']), '字母欧（O）和数字0', str(row['组合']), '')
             self._signal_toTextEdit.emit('################完成字母欧（O）和数字0检查################')
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
 
-    def factoryCodeCheck(self, sheet):  # 重码检查
+    def factoryCodeCheck(self, sheet_name, sheet):  # 重码检查
         try:
             self._signal_toTextEdit.emit('################开始工厂码检查################')
             groupby_GCM = sheet.groupby('工厂码U1')
             if groupby_GCM.ngroups > 1:
-                self._signal_toTextEdit.emit('工厂码错误，应该有且只有一个工厂码')
+                self._signal_toTextEdit.emit('工厂码错误，应该有且只有1个工厂码')
+                self.setError(sheet_name, '', '工厂码', '有'+str(groupby_GCM.ngroups)+'个工厂码', '工厂码错误，应该有且只有1个工厂码')
             self._signal_toTextEdit.emit('################完成工厂码检查################')
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
 
-    def QCMCodeCheck(self, sheet):  # 重码检查
+    def QCMCodeCheck(self, sheet_name, sheet):  # 重码检查
         try:
             self._signal_toTextEdit.emit('################开始全厂码检查################')
             groupby_QCM = sheet.groupby('全厂码F0')
             for name, group in groupby_QCM:
                 if not (name[0] == 'T' or name[0] == 'G'):
-                    self._signal_toTextEdit.emit('错误全厂码F0：' + name+' 全厂码F0首字母不为G或T，请检查全厂码F0首字母')
+                    self._signal_toTextEdit.emit('错误全厂码：' + name+' 全厂码首字母不为G或T，请检查全厂码F0首字母')
+                    self.setError(sheet_name, '', '全厂码', name, '全厂码首字母不为G或T，请检查全厂码F0首字母')
                 if not (name[1:].isdigit()):
-                    self._signal_toTextEdit.emit('错误全厂码F0：' + name+' 全厂码F0除第一位外不为数字，请调整为数字')
+                    self._signal_toTextEdit.emit('错误全厂码：' + name+' 全厂码除第一位外不为数字，请调整为数字')
+                    self.setError(sheet_name, '', '全厂码', name, '全厂码除第一位外不为数字，请调整为数字')
                 if not len(name) == 3:
-                    self._signal_toTextEdit.emit('错误全厂码F0：' + name+' 全厂码F0长度不为3，请调整全厂码F0长度为3')
+                    self._signal_toTextEdit.emit('错误全厂码：' + name+' 全厂码长度不为3，请调整全厂码F0长度为3')
+                    self.setError(sheet_name, '', '全厂码', name, '全厂码长度不为3，请调整全厂码F0长度为3')
 
             self._signal_toTextEdit.emit(str(groupby_QCM.size()))
             self._signal_toTextEdit.emit('全厂码个数：' + str(groupby_QCM.ngroups))
             if not (groupby_QCM.ngroups) == 1:  # 分组个数只为1
-                self._signal_toTextEdit.emit('每个sheet全厂码F0应只有1种，不同全场码F0请分成不同sheet')
+                self._signal_toTextEdit.emit('每个sheet全厂码应只有1种，不同全场码请分成不同sheet')
+                self.setError(sheet_name, '', '全厂码', '', '每个sheet全厂码应只有1种，不同全场码请分成不同sheet')
             self._signal_toTextEdit.emit('################完成全场码检查################')
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
 
-    def XTMCodeCheck(self, sheet):  # 重码检查
+    def XTMCodeCheck(self,sheet_name, sheet):  # 重码检查
         try:
             self._signal_toTextEdit.emit('################开始系统码检查################')
             groupby_XTM = sheet.groupby('系统码F1')
             for name, group in groupby_XTM:
                 if not (name[0:3].isalpha()):
-                    self._signal_toTextEdit.emit('错误系统码F1：' + name + ' 系统码F1前3位应全为字母')
+                    self._signal_toTextEdit.emit('错误系统码：' + name + ' 系统码前3位应全为字母')
+                    self.setError(sheet_name, '', '系统码', name, '系统码前3位应全为字母')
                 if not (name[3:5].isdigit()):
-                    self._signal_toTextEdit.emit('错误系统码F1：' + name + ' 系统码F1后2位应全为数字')
+                    self._signal_toTextEdit.emit('错误系统码：' + name + ' 系统码后2位应全为数字')
+                    self.setError(sheet_name, '', '系统码', name, '系统码后2位应全为数字')
                 if not len(name) == 5:
-                    self._signal_toTextEdit.emit('错误系统码F1：' + name + ' 系统码F1长度不为5，请调整系统码F1长度为5')
+                    self._signal_toTextEdit.emit('错误系统码：' + name + ' 系统码长度不为5，请调整系统码长度为5')
+                    self.setError(sheet_name, '', '系统码', name, '系统码长度不为5，请调整系统码长度为5')
 
             # 选择系统码树状图模板
             tree_tmp = []
@@ -172,12 +195,13 @@ class checkCode(QtCore.QThread):
                 if not (row['系统码F1'] in tree_tmp):
                     if row['系统码F1'][0:3] == 'MQA' and row['系统码F1'][3:5].isdigit():
                         continue
-                    self._signal_toTextEdit.emit('系统码F1在树状图模板中不存在！ 序号：' + str(row['序号']) + ' 系统码F1：' + str(row['系统码F1']))
+                    self._signal_toTextEdit.emit('系统码在树状图模板中不存在！ 序号：' + str(row['序号']) + ' 系统码：' + str(row['系统码F1']))
+                    self.setError(sheet_name, str(row['序号']), '系统码', str(row['系统码F1']), '系统码在树状图模板中不存在！')
             self._signal_toTextEdit.emit('################完成系统码检查################')
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
 
-    def SBMCodeCheck(self, sheet):  # 重码检查
+    def SBMCodeCheck(self,sheet_name, sheet):  # 重码检查
         try:
             self._signal_toTextEdit.emit('################开始设备码检查################')
             # 风电设备码全部为2个字母+3位数字
@@ -186,6 +210,7 @@ class checkCode(QtCore.QThread):
                 for name, group in groupby_SBM:
                     if not (name[0:2].isalpha()):
                         self._signal_toTextEdit.emit('错误设备码F2：' + name + ' 设备码F2前2位应全为字母')
+                        #self.setError(sheet_name, '', '系统码', name, '系统码长度不为5，请调整系统码长度为5')
                     if not (name[2:5].isdigit()):
                         self._signal_toTextEdit.emit('错误设备码F2：' + name + ' 设备码F2后3位应全为数字')
                     if not len(name) == 5:
@@ -359,9 +384,9 @@ class checkCode(QtCore.QThread):
         #with open(output_path, 'w', encoding='utf-8') as file1:
         #    print(self.textEdit.toPlainText(), file=file1)
         desktop_path = os.path.join(os.path.expanduser('~'), "Desktop/")
-        full_path = desktop_path + self.uncheckedFilePath.split('/')[-1].split('.')[0] + '检查结果.txt'  # 也可以创建一个.doc的word文档
-        with open(full_path, 'w', encoding='utf-8') as file1:
-            print('111', file=file1)
+        full_path = desktop_path + self.uncheckedFilePath.split('/')[-1].split('.')[0] + '检查结果.xlsx'  # 也可以创建一个.doc的word文档
+        pd.DataFrame(self.checkData).to_excel(full_path, encoding="utf_8_sig")
+
         self._signal_toTextEdit.emit('*已生成检查结果到桌面*')
 
     @property
