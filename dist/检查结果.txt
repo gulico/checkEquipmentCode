@@ -1,0 +1,105 @@
+读取系统码树状图
+读取读取设备编码列表
+读取读取设备编码列表
+**********************************************
+开始检测sheet：垣曲华昌
+################开始重码检查################
+重码条数：69
+序号：5367.0 组合：SDHCPC=G01MQA04UR010824
+序号：nan 组合：SDHCPC=G01MQA04UR010824
+序号：nan 组合：SDHCPC=G01MQA04UR010824
+序号：nan 组合：SDHCPC=T01CKC01
+序号：nan 组合：SDHCPC=T01CKC01BX001
+序号：nan 组合：SDHCPC=T01CKC01BX002
+序号：nan 组合：SDHCPC=T01CKC01BX003
+序号：nan 组合：SDHCPC=T01CKC01BX004
+序号：nan 组合：SDHCPC=T01CKC01BX005
+序号：nan 组合：SDHCPC=T01CKC01BX006
+序号：nan 组合：SDHCPC=T01CKC01BX007
+序号：nan 组合：SDHCPC=T01CKC01BX008
+序号：nan 组合：SDHCPC=T01CKC01BX009
+序号：nan 组合：SDHCPC=T01CKC01BX010
+序号：nan 组合：SDHCPC=T01CKC01BX011
+序号：nan 组合：SDHCPC=T01CKC01BX012
+序号：nan 组合：SDHCPC=T01CKC01BX013
+序号：nan 组合：SDHCPC=T01CKC01BX014
+序号：nan 组合：SDHCPC=T01CKC01BX015
+序号：nan 组合：SDHCPC=T01CKC01BX016
+序号：nan 组合：SDHCPC=T01CKC01BX017
+序号：nan 组合：SDHCPC=T01CKC01BX018
+序号：nan 组合：SDHCPC=T01CKC01BX019
+序号：nan 组合：SDHCPC=T01CKC01BX020
+序号：nan 组合：SDHCPC=T01CKC01BX021
+序号：nan 组合：SDHCPC=T01CKC01BX022
+序号：nan 组合：SDHCPC=T01CKC01BX023
+序号：nan 组合：SDHCPC=T01CKC01BX024
+序号：nan 组合：SDHCPC=T01CKC01BX025
+序号：nan 组合：SDHCPC=T01CKC01BX026
+序号：nan 组合：SDHCPC=T01CKC01BX027
+序号：nan 组合：SDHCPC=T01CKC01BX028
+序号：nan 组合：SDHCPC=T01CKC01BX029
+序号：nan 组合：SDHCPC=T01CKC01BX032
+序号：nan 组合：SDHCPC=T01CKC01BX033
+序号：nan 组合：SDHCPC=T01CKC01BX034
+序号：nan 组合：SDHCPC=T01CKC01
+序号：nan 组合：SDHCPC=T01CKC01BX001
+序号：nan 组合：SDHCPC=T01CKC01BX002
+序号：nan 组合：SDHCPC=T01CKC01BX003
+序号：nan 组合：SDHCPC=T01CKC01BX004
+序号：nan 组合：SDHCPC=T01CKC01BX005
+序号：nan 组合：SDHCPC=T01CKC01BX006
+序号：nan 组合：SDHCPC=T01CKC01BX007
+序号：nan 组合：SDHCPC=T01CKC01BX008
+序号：nan 组合：SDHCPC=T01CKC01BX009
+序号：nan 组合：SDHCPC=T01CKC01BX010
+序号：nan 组合：SDHCPC=T01CKC01BX011
+序号：nan 组合：SDHCPC=T01CKC01BX012
+序号：nan 组合：SDHCPC=T01CKC01BX013
+序号：nan 组合：SDHCPC=T01CKC01BX014
+序号：nan 组合：SDHCPC=T01CKC01BX015
+序号：nan 组合：SDHCPC=T01CKC01BX016
+序号：nan 组合：SDHCPC=T01CKC01BX017
+序号：nan 组合：SDHCPC=T01CKC01BX018
+序号：nan 组合：SDHCPC=T01CKC01BX019
+序号：nan 组合：SDHCPC=T01CKC01BX020
+序号：nan 组合：SDHCPC=T01CKC01BX021
+序号：nan 组合：SDHCPC=T01CKC01BX022
+序号：nan 组合：SDHCPC=T01CKC01BX023
+序号：nan 组合：SDHCPC=T01CKC01BX024
+序号：nan 组合：SDHCPC=T01CKC01BX025
+序号：nan 组合：SDHCPC=T01CKC01BX026
+序号：nan 组合：SDHCPC=T01CKC01BX027
+序号：nan 组合：SDHCPC=T01CKC01BX028
+序号：nan 组合：SDHCPC=T01CKC01BX029
+序号：nan 组合：SDHCPC=T01CKC01BX032
+序号：nan 组合：SDHCPC=T01CKC01BX033
+序号：nan 组合：SDHCPC=T01CKC01BX034
+################完成重码检查################
+################开始字母欧（O）和数字0检查################
+################完成字母欧（O）和数字0检查################
+################开始工厂码检查################
+################完成工厂码检查################
+################开始全厂码检查################
+全厂码F0
+G01    24298
+T01     1867
+dtype: int64
+全厂码个数：2
+每个sheet全厂码F0应只有1种，不同全场码F0请分成不同sheet
+################完成全场码检查################
+################开始系统码检查################
+################完成系统码检查################
+################开始设备码检查################
+设备码F2在设备编码模板中不存在！序号：nan 设备码F2：B0X30
+设备码F2在设备编码模板中不存在！序号：nan 设备码F2：B0X31
+序号：nan错误设备码F2：B0X30设备码F2前2位应全为字母
+序号：nan错误设备码F2：B0X30设备码F2后3位应全为数字
+序号：nan错误设备码F2：B0X31设备码F2前2位应全为字母
+序号：nan错误设备码F2：B0X31设备码F2后3位应全为数字
+################完成设备码检查################
+################开始产品码检查################
+################完成产品码检查################
+################开始设备层级检查################
+序号：nan缺少设备层级：产品码P1设备码组合：SDHCPC=T01AEG01QC004
+序号：nan缺少设备层级：产品码P1设备码组合：SDHCPC=T01YCP01UH005
+################完成设备层级检查################
