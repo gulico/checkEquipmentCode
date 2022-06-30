@@ -41,9 +41,9 @@ class checkCode(QtCore.QThread):
             self.XTM_tree_FD = XTM_tree['风电树状图']
             self.XTM_tree_GF = XTM_tree['光伏树状图']
 
-            # 读取设备编码
-            self._signal_toTextEdit.emit('读取读取设备编码列表')
-            filePath = "设备编码.xlsx"
+            # 读取设备码索引
+            self._signal_toTextEdit.emit('读取读取设备码索引列表')
+            filePath = "设备码索引模板.xlsx"
             self.SBM_tree = pd.read_excel(filePath).dropna(axis=0, thresh=2)
 
             # 读取待检测设备编码表
@@ -86,13 +86,16 @@ class checkCode(QtCore.QThread):
             self.QCMCodeCheck(sheet_name, sheet)
             self.reProgressBarvalue()
             self.XTMCodeCheck(sheet_name, sheet)
-            # self.reProgressBarvalue()
-            # self.SBMCodeCheck(sheet_name, sheet)
-            # self.reProgressBarvalue()
-            # self.CPMCodeCheck(sheet_name, sheet)
-            # self.reProgressBarvalue()
-            # self.SBCJCheck(sheet_name, sheet)
-            # self.reProgressBarvalue()
+            self.reProgressBarvalue()
+            self.SBMCodeCheck(sheet_name, sheet)
+            self.reProgressBarvalue()
+            self.CPMCodeCheck(sheet_name, sheet)
+            self.reProgressBarvalue()
+            self.SBCJCheck(sheet_name, sheet)
+            self.reProgressBarvalue()
+
+        # 全部sheet一起检查设备层级
+        self.SBCJCheck_ALLsheet()
 
     def setError(self, sheet_name, num, errorType, errorCode, errorContent):
         error = {'sheet': sheet_name,
@@ -100,8 +103,7 @@ class checkCode(QtCore.QThread):
                  '错误类型': errorType,
                  '错误内容': errorCode,
                  '详细错误和修改建议': errorContent}
-        for e in error:
-            self.checkData.append(e)
+        self.checkData.append(error)
 
     def duplicateCheck(self, sheet_name, sheet):  # 重码检查
         try:
@@ -166,7 +168,7 @@ class checkCode(QtCore.QThread):
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
 
-    def XTMCodeCheck(self,sheet_name, sheet):  # 重码检查
+    def XTMCodeCheck(self, sheet_name, sheet):  # 重码检查
         try:
             self._signal_toTextEdit.emit('################开始系统码检查################')
             groupby_XTM = sheet.groupby('系统码F1')
@@ -192,16 +194,20 @@ class checkCode(QtCore.QThread):
             for index, row in sheet.iterrows():
                 if not (isinstance(row['系统码F1'], str)):  # 跳过NAN空值
                     continue
-                if not (row['系统码F1'] in tree_tmp):
-                    if row['系统码F1'][0:3] == 'MQA' and row['系统码F1'][3:5].isdigit():
-                        continue
+                if not ((str(row['系统码F1']).lower() in [tree_tmp.lower() for tree_tmp in tree_tmp]) or
+                     (str(row['系统码F1'][0:3]).lower() == 'mqa' and row['系统码F1'][3:5].isdigit())): # 不区分大小写没有
                     self._signal_toTextEdit.emit('系统码在树状图模板中不存在！ 序号：' + str(row['序号']) + ' 系统码：' + str(row['系统码F1']))
                     self.setError(sheet_name, str(row['序号']), '系统码', str(row['系统码F1']), '系统码在树状图模板中不存在！')
+                elif not((str(row['系统码F1']) in tree_tmp) or
+                         (row['系统码F1'][0:3] == 'MQA' and row['系统码F1'][3:5].isdigit())):  # 不区分大小写有，区分大小写无，说明大小写错误
+                    self._signal_toTextEdit.emit('系统码大小写有误，应全为大写字母 序号：' + str(row['序号']) + ' 系统码：' + str(row['系统码F1']))
+                    self.setError(sheet_name, str(row['序号']), '系统码', str(row['系统码F1']), '系统码大小写有误，应全为大写字母')
+
             self._signal_toTextEdit.emit('################完成系统码检查################')
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
 
-    def SBMCodeCheck(self,sheet_name, sheet):  # 重码检查
+    def SBMCodeCheck(self, sheet_name, sheet):  # 重码检查
         try:
             self._signal_toTextEdit.emit('################开始设备码检查################')
             # 风电设备码全部为2个字母+3位数字
@@ -225,8 +231,8 @@ class checkCode(QtCore.QThread):
                 if not (isinstance(row['设备码F2'], str)):  # 跳过NAN空值
                     continue
                 if not (row['设备码F2'][0:2] in tree_tmp):
-                    self._signal_toTextEdit.emit('设备码在设备编码模板中不存在！序号：' + str(row['序号']) + ' 设备码F2：' + str(row['设备码F2']))
-                    self.setError(sheet_name, str(row['序号']), '设备码', str(row['设备码F2']), '设备码在设备编码模板中不存在！')
+                    self._signal_toTextEdit.emit('设备码在设备码索引模板中不存在！序号：' + str(row['序号']) + ' 设备码F2：' + str(row['设备码F2']))
+                    self.setError(sheet_name, str(row['序号']), '设备码', str(row['设备码F2']), '设备码在设备码索引模板中不存在！')
             # 光伏逆变器、汇流箱、组串和支架等有特殊规则，按其规则仔细检查
             SBM_list = []
             for name, group in groupby_SBM:
@@ -246,7 +252,8 @@ class checkCode(QtCore.QThread):
                         if len(name[2:]) == 4:  # 光伏组件4位设备码
                             GC_bit4 = True
                             if not ('TB' + str(name[2:4]) in SBM_list):
-                                self._signal_toTextEdit.emit('序号：'+str(numb)+ '光伏组件设备码'+ str(name)+ '缺少对应逆变器'+ 'TB' + str(name[2:4]))
+                                self._signal_toTextEdit.emit('序号：'+str(numb) + '光伏组件设备码' + str(name) + '缺少对应逆变器' + 'TB' + str(name[2:4]))
+                                self.setError(sheet_name, str(numb), '设备码', str(name), '光伏组件设备码' + str(name) + '缺少对应逆变器' + 'TB' + str(name[2:4]))
                         elif len(name[2:]) == 6:  # 光伏组件6位设备码
                             GC_bit6 = True
                             TB4 = 'TB' + str(name[2:6]) in SBM_list
@@ -257,53 +264,81 @@ class checkCode(QtCore.QThread):
                             if TB4:  # 有逆变器4位
                                 if not UC2:  # 有逆变器4位，无汇流箱2位
                                     self._signal_toTextEdit.emit('序号：' + str(numb) + '光伏组件设备码'+str(name) + '缺少对应汇流箱' + 'UC' + str(name[2:4]))
+                                    self.setError(sheet_name, str(numb), '设备码', str(name),
+                                                  '光伏组件设备码' + str(name) + '缺少对应汇流箱' + 'UC' + str(name[2:4]))
                             else:  # 没有4位逆变器
                                 if UC4:  # 汇流箱4位
                                     if not TB2:  # 有汇流箱4位，无逆变器2位
                                         self._signal_toTextEdit.emit('序号：'+str(numb) + '光伏组件设备码'+str(name) + '缺少对应逆变器' + 'TB' + str(name[2:4]))
+                                        self.setError(sheet_name, str(numb), '设备码', str(name),
+                                                      '光伏组件设备码' + str(name) + '缺少对应逆变器' + 'TB' + str(name[2:4]))
                                 else:  # 没有4位逆变器，没有4位汇流箱
                                     if not (UC2 or TB2):  # 没有2位逆变器，没有2位汇流箱
                                         self._signal_toTextEdit.emit('序号：' + str(numb) + '光伏组件设备码'+str(name) + '缺少对应逆变器和汇流箱')
+                                        self.setError(sheet_name, str(numb), '设备码', str(name),
+                                                      '光伏组件设备码'+str(name) + '缺少对应逆变器和汇流箱')
                                     elif UC2:
                                         self._signal_toTextEdit.emit('序号：'+str(numb) + '光伏组件设备码'+str(name) + '有汇流箱' + 'UC' + str(name[2:4]) + '缺少对应4位逆变器')
+                                        self.setError(sheet_name, str(numb), '设备码', str(name),
+                                                      '光伏组件设备码'+str(name) + '有汇流箱' + 'UC' + str(name[2:4]) + '缺少对应4位逆变器')
                                     elif TB2:
                                         self._signal_toTextEdit.emit('序号：'+str(numb) + '光伏组件设备码'+str(name) + '有逆变器' + 'TB' + str(name[2:4]) + '缺少对应4位汇流箱')
+                                        self.setError(sheet_name, str(numb), '设备码', str(name),
+                                                      '有逆变器' + 'TB' + str(name[2:4]) + '缺少对应4位汇流箱')
                         else:  # 光伏组件长度错误
                             self._signal_toTextEdit.emit('错误设备码F2：' + str(name)+'序号：' + str(numb) + '光伏组件设备码F2数字部分应该为4位或6位')
+                            self.setError(sheet_name, str(numb), '设备码', str(name),
+                                          '光伏组件设备码F2数字部分应该为4位或6位')
                     ####################### 逆变器 #######################
                     elif name[0:2] == 'TB' and '逆变器' in row['设备名称']:  # 逆变器
                         if len(name[2:]) == 4:
                             UC2 = 'UC' + str(name[2:4]) in SBM_list
                             if not UC2:  # 有逆变器4位，无汇流箱2位
                                 self._signal_toTextEdit.emit('序号：' + str(numb) + '光伏组件设备码' + str(name) + '缺少对应汇流箱' + 'UC' + str(name[2:4]))
+                                self.setError(sheet_name, str(numb), '设备码', str(name),
+                                              '缺少对应汇流箱' + 'UC' + str(name[2:4]))
                         elif not (len(name[2:]) == 2):  # 逆变器长度错误
                             self._signal_toTextEdit.emit('序号：' + str(numb) + '错误设备码F2：' + str(name) + '逆变器设备码F2数字部分应该为2位或4位')
+                            self.setError(sheet_name, str(numb), '设备码', str(name),
+                                          '逆变器设备码F2数字部分应该为2位或4位')
                     ####################### 汇流箱 #######################
                     elif name[0:2] == 'UC' and '汇流箱' in row['设备名称']:  # 汇流箱
                         if len(name[2:]) == 4:
                             TB2 = 'TB' + str(name[2:4]) in SBM_list
                             if not TB2:  # 有汇流箱4位，无逆变器2位
                                 self._signal_toTextEdit.emit('序号：' + str(numb) + '光伏组件设备码' + str(name) + '缺少对应汇流箱' + 'TB' + str(name[2:4]))
+                                self.setError(sheet_name, str(numb), '设备码', str(name),
+                                              '光伏组件设备码' + str(name) + '缺少对应汇流箱' + 'TB' + str(name[2:4]))
                         elif not (len(name[2:]) == 2):  # 汇流箱长度错误
                             self._signal_toTextEdit.emit('序号：' + str(numb) + '错误设备码F2：' + str(name) + '汇流箱设备码F2数字部分应该为2位或4位')
+                            self.setError(sheet_name, str(numb), '设备码', str(name),
+                                          '汇流箱设备码F2数字部分应该为2位或4位')
                     ####################### 其他 #######################
                     elif not name[0:2] == 'UR':
                         if not (name[0:2].isalpha()):
                             self._signal_toTextEdit.emit('序号：' + str(numb) + '错误设备码F2：' + str(name) + '设备码F2前2位应全为字母')
+                            self.setError(sheet_name, str(numb), '设备码', str(name),
+                                          '设备码F2前2位应全为字母')
                         if not (name[2:5].isdigit()):
                             self._signal_toTextEdit.emit('序号：' + str(numb) + '错误设备码F2：' + str(name) + '设备码F2后3位应全为数字')
+                            self.setError(sheet_name, str(numb), '设备码', str(name),
+                                          '设备码F2后3位应全为数字')
                         if not len(name) == 5:
                             self._signal_toTextEdit.emit('序号：' + str(numb) + '错误设备码F2：' + str(name) + '设备码F2长度不为5，请调整设备码F2长度为5')
+                            self.setError(sheet_name, str(numb), '设备码', str(name),
+                                          '设备码F2长度不为5，请调整设备码F2长度为5')
                 ####################### 支架 #######################
                 for index, row in sheet.iterrows():
                     if name[0:2] == 'UR':  # 支架
                         if not ((GC_bit4 and len(name[2:]) == 4) or (GC_bit6 and len(name[2:]) == 6)):
                             self._signal_toTextEdit.emit('序号：' + str(numb) + '错误设备码F2：' + str(name) + '支架编码长度必须与光伏组件统一')
+                            self.setError(sheet_name, str(numb), '设备码', str(name),
+                                          '支架编码长度必须与光伏组件统一')
             self._signal_toTextEdit.emit('################完成设备码检查################')
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
 
-    def CPMCodeCheck(self, sheet):  # 重码检查
+    def CPMCodeCheck(self, sheet_name, sheet):  # 重码检查
         try:
             self._signal_toTextEdit.emit('################开始产品码检查################')
             # 前两位
@@ -314,12 +349,16 @@ class checkCode(QtCore.QThread):
                 if not (isinstance(row['产品码P1'], str)):  # 跳过NAN空值
                     continue
                 if not (row['产品码P1'][0:2] in tree_tmp):
-                    self._signal_toTextEdit.emit('产品码P1在设备编码模板中不存在！ 序号：' + str(row['序号'])+ ' 产品码P1：'+ str(row['产品码P1']))
+                    self._signal_toTextEdit.emit('产品码P1在设备码索引模板中不存在！ 序号：' + str(row['序号']) + ' 产品码P1：' + str(row['产品码P1']))
+                    self.setError(sheet_name, str(row['序号']), '产品码P1', str(row['产品码P1']),
+                                  '产品码P1在设备码索引模板中不存在！')
 
                 if not (isinstance(row['产品码P2'], str)):  # 跳过NAN空值
                     continue
                 if not (row['产品码P2'][0:2] in tree_tmp):
-                    self._signal_toTextEdit.emit('产品码P2在设备编码模板中不存在！ 序号：' + str(row['序号'])+ '产品码P1：'+ str(row['产品码P2']))
+                    self._signal_toTextEdit.emit('产品码P2在设备码索引模板中不存在！ 序号：' + str(row['序号'])+ '产品码P1：'+ str(row['产品码P2']))
+                    self.setError(sheet_name, str(row['序号']), '产品码P2', str(row['产品码P2']),
+                                  '产品码P2在设备码索引模板中不存在！')
             # 后2-3位
             tmpsheet = sheet.fillna('-')
             for index, row in tmpsheet.iterrows():
@@ -334,8 +373,12 @@ class checkCode(QtCore.QThread):
                     contain_cpm2_len = len(tmpsheet[tmpsheet['产品码P1'].str.contains(cpm2)])
                     if contain_cpm2_len < 100:
                         self._signal_toTextEdit.emit('序号：' + str(numb) + '错误产品码P1：' + str(row['产品码P1']) +'5级设备超过100个时，产品码序列号可以有3位数字,否则应为2位数字')
+                        self.setError(sheet_name, str(numb), '产品码P1', str(row['产品码P1']),
+                                      '5级设备超过100个时，产品码序列号可以有3位数字,否则应为2位数字')
                 else:
                     self._signal_toTextEdit.emit('序号：' + str(numb) + '错误产品码P1：' + str(row['产品码P1']) + '产品码P1应为2个字母+2位数字或2个字母+3位数字')
+                    self.setError(sheet_name, str(numb), '产品码P1', str(row['产品码P1']),
+                                  '产品码P1应为2个字母+2位数字或2个字母+3位数字')
                 ####################### 产品码P2 #######################
                 if row['产品码P2'] == '-':  # 过NAN空值
                     continue
@@ -346,24 +389,30 @@ class checkCode(QtCore.QThread):
                     contain_cpm2_len = len(tmpsheet[tmpsheet['产品码P2'].str.contains(cpm2)])
                     if contain_cpm2_len < 100:
                         self._signal_toTextEdit.emit('序号：' + str(numb) + '错误产品码P2：' + str(row['产品码P2']) + '5级设备超过100个时，产品码序列号可以有3位数字,否则应为2位数字')
+                        self.setError(sheet_name, str(numb), '产品码P2', str(row['产品码P2']),
+                                      '5级设备超过100个时，产品码序列号可以有3位数字,否则应为2位数字')
                 else:
                     self._signal_toTextEdit.emit('序号：' + str(numb) + '错误产品码P2：' + str(row['产品码P2']) + '产品码P2应为2个字母+2位数字或2个字母+3位数字')
+                    self.setError(sheet_name, str(numb), '产品码P2', str(row['产品码P2']),
+                                  '产品码P2应为2个字母+2位数字或2个字母+3位数字')
             self._signal_toTextEdit.emit('################完成产品码检查################')
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
 
-    def SBCJCheck(self, sheet):  # 重码检查
+    def SBCJCheck(self, sheet_name, sheet):  # 重码检查
         try:
             self._signal_toTextEdit.emit('################开始设备层级检查################')
             # 筛选查看“设备层级”列，下拉选项中有且只有1~5级
-            groupby_SBCJ = sheet.groupby('设备层级')
-            Sum_CJ = 0
-            for name, group in groupby_SBCJ:
-                Sum_CJ = Sum_CJ + name
-                if not (name in [1, 2, 3, 4, 5]):
-                    self._signal_toTextEdit.emit('错误的层级'+ str(name) + '设备层级有且只有1~5级')
-            if not (Sum_CJ == 15):
-                self._signal_toTextEdit.emit('缺少层级，设备层级有且只有1~5级')
+            # groupby_SBCJ = sheet.groupby('设备层级')
+            # Sum_CJ = 0
+            # for name, group in groupby_SBCJ:
+            #     Sum_CJ = Sum_CJ + name
+            #     if not (name in [1, 2, 3, 4, 5]):
+            #         self._signal_toTextEdit.emit('错误的层级' + str(name) + '设备层级有且只有1~5级')
+            #         self.setError(sheet_name, '', '设备层级', '', '设备层级有且只有1~5级')
+            # if not (Sum_CJ == 15):
+            #     self._signal_toTextEdit.emit('缺少层级，设备层级有且只有1~5级')
+            #     self.setError(sheet_name, '', '设备层级', '', '缺少层级，设备层级有且只有1~5级')
 
             # 检查筛选出的编码组成部分与所勾选的设备层级是否匹配
             CJM_name_list = ['工厂码U1', '全厂码F0', '系统码F1', '设备码F2', '产品码P1']
@@ -372,19 +421,42 @@ class checkCode(QtCore.QThread):
                 numb = row['序号']
                 for cjEle in CJM_name_list[0:sbcj]:  # 遍历应该有内容的层级
                     if (row[cjEle + ''] != row[cjEle]):  # 为nan
-                        self._signal_toTextEdit.emit('序号：' + str(numb) + '缺少设备层级：' + str(cjEle) + '设备码组合：' + str(row['组合']))
+                        self._signal_toTextEdit.emit('序号：' + str(numb) + '设备层级错误' + ' 设备码组合：' + str(row['组合']))
+                        self.setError(sheet_name, str(numb), '设备层级', '', '设备层级错误' + '设备码组合：' + str(row['组合']))
 
                 for cjEle in CJM_name_list[sbcj:]:  # 遍历不应该有内容的层级
                     if not (row[cjEle] != row[cjEle]):  # 不为nan
-                        self._signal_toTextEdit.emit('序号：' + str(numb) + '多余的设备层级：' + str(cjEle) + '设备码组合：' + str(row['组合']))
+                        self._signal_toTextEdit.emit('序号：' + str(numb) + '设备层级错误' + '设备码组合：' + str(row['组合']))
+                        self.setError(sheet_name, str(numb), '设备层级', '',
+                                      '设备层级错误' + ' 设备码组合：' + str(row['组合']))
             self._signal_toTextEdit.emit('################完成设备层级检查################')
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
 
+    def SBCJCheck_ALLsheet(self):
+        try:
+            self._signal_toTextEdit.emit('################开始整张excel设备层级检查################')
+            allData = pd.concat(self.df)
+            allData = allData.iloc[:, 0:15]
+            allData.columns = ['序号', '分公司', '场站名称', '场站简称', '场站类型', '设备名称', '工厂码U1', '全厂码F0', '系统码F1',
+                             '设备码F2', '产品码P1', '产品码P2', '组合', '设备层级', '上级设备编码']
+            groupby_SBCJ = allData.groupby('设备层级')
+            Sum_CJ = 0
+            for name, group in groupby_SBCJ:
+                Sum_CJ = Sum_CJ + name
+                if not (name in [1, 2, 3, 4, 5]):
+                    self._signal_toTextEdit.emit('错误的层级' + str(name) + '设备层级有且只有1~5级')
+                    self.setError('', '', '设备层级', '', '设备层级有且只有1~5级')
+            if not (Sum_CJ == 15):
+                self._signal_toTextEdit.emit('缺少层级，设备层级有且只有1~5级')
+                self.setError('', '', '设备层级', '', '缺少层级，设备层级有且只有1~5级')
+            self._signal_toTextEdit.emit('################完成整张excel设备层级检查################')
+        except Exception as e:
+            self._signal_toTextEdit.emit(str(e.args))
+
+
+
     def outputTXT(self):
-        #output_path = '检查结果.txt'
-        #with open(output_path, 'w', encoding='utf-8') as file1:
-        #    print(self.textEdit.toPlainText(), file=file1)
         desktop_path = os.path.join(os.path.expanduser('~'), "Desktop/")
         full_path = desktop_path + self.uncheckedFilePath.split('/')[-1].split('.')[0] + '检查结果.xlsx'  # 也可以创建一个.doc的word文档
         pd.DataFrame(self.checkData).to_excel(full_path, encoding="utf_8_sig")
