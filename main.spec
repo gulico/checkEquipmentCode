@@ -5,7 +5,7 @@ block_cipher = None
 
 
 a = Analysis(
-    ['main.py'],
+    ['C:/Users/ZHKN/PycharmProjects/pythonProject/main.py'],
     pathex=[],
     binaries=[],
     datas=[],

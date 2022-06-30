@@ -22,6 +22,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
         if len(self.lineEdit.text()) == 0:
             self.show_message()
         else:
+            self.pushButton_2.setEnabled(False)
             self.mainLogic()
 
     def mainLogic(self):
