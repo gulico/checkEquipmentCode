@@ -369,12 +369,13 @@ class checkCode(QtCore.QThread):
                 if len(row['产品码P1'][2:]) == 2:
                     continue
                 elif len(row['产品码P1'][2:]) == 3:
-                    cpm2 = row['产品码P1'][0:2]  # 前两位
-                    contain_cpm2_len = len(tmpsheet[tmpsheet['产品码P1'].str.contains(cpm2)])
-                    if contain_cpm2_len < 100:
-                        self._signal_toTextEdit.emit('序号：' + str(numb) + '错误产品码P1：' + str(row['产品码P1']) +'5级设备超过100个时，产品码序列号可以有3位数字,否则应为2位数字')
+                    # cpm2 = row['产品码P1'][0:2]  # 前两位
+                    # contain_cpm2_len = len(tmpsheet[tmpsheet['产品码P1'].str.contains(cpm2)])
+                    cpm345 = int(row['产品码P1'][2:])
+                    if cpm345 < 100:
+                        self._signal_toTextEdit.emit('序号：' + str(numb) + '错误产品码P1：' + str(row['产品码P1']) +'产品码未超过100时应为2位数字')
                         self.setError(sheet_name, str(numb), '产品码P1', str(row['产品码P1']),
-                                      '5级设备超过100个时，产品码序列号可以有3位数字,否则应为2位数字')
+                                      '产品码未超过100时应为2位数字')
                 else:
                     self._signal_toTextEdit.emit('序号：' + str(numb) + '错误产品码P1：' + str(row['产品码P1']) + '产品码P1应为2个字母+2位数字或2个字母+3位数字')
                     self.setError(sheet_name, str(numb), '产品码P1', str(row['产品码P1']),
@@ -385,12 +386,12 @@ class checkCode(QtCore.QThread):
                 if len(row['产品码P2'][2:]) == 2:
                     continue
                 elif len(row['产品码P2'][2:]) == 3:
-                    cpm2 = row['产品码P2'][0:2]  # 前两位
-                    contain_cpm2_len = len(tmpsheet[tmpsheet['产品码P2'].str.contains(cpm2)])
-                    if contain_cpm2_len < 100:
-                        self._signal_toTextEdit.emit('序号：' + str(numb) + '错误产品码P2：' + str(row['产品码P2']) + '5级设备超过100个时，产品码序列号可以有3位数字,否则应为2位数字')
+                    #cpm2 = row['产品码P2'][0:2]  # 前两位
+                    cpm345 = int(row['产品码P1'][2:])
+                    if cpm345 < 100:
+                        self._signal_toTextEdit.emit('序号：' + str(numb) + '错误产品码P2：' + str(row['产品码P2']) + '产品码未超过100时应为2位数字')
                         self.setError(sheet_name, str(numb), '产品码P2', str(row['产品码P2']),
-                                      '5级设备超过100个时，产品码序列号可以有3位数字,否则应为2位数字')
+                                      '产品码未超过100时应为2位数字')
                 else:
                     self._signal_toTextEdit.emit('序号：' + str(numb) + '错误产品码P2：' + str(row['产品码P2']) + '产品码P2应为2个字母+2位数字或2个字母+3位数字')
                     self.setError(sheet_name, str(numb), '产品码P2', str(row['产品码P2']),
