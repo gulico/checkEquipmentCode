@@ -18,6 +18,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
     @pyqtSlot(bool)
     def on_pushButton_2_clicked(self, checked):
         self.textEdit.moveCursor(QTextCursor.End)
+        self.textEdit.clear()
         # self.textEdit.append('点击按钮了')
         if len(self.lineEdit.text()) == 0:
             self.show_message()
@@ -29,6 +30,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
         self.thread = checkCode(self.lineEdit.text())
         self.thread.signal_toTextEdit.connect(self.call_back_toTextEdit)  # 进程连接回传到GUI的事件
         self.thread.signal_toProgressBar.connect(self.call_back_toProgressBar)
+        self.thread.signal_toChange.connect(self.call_back_toChange)
         self.thread.start()  # 开始线程
 
     def call_back_toTextEdit(self, msg):
@@ -36,6 +38,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_mainWindow):
 
     def call_back_toProgressBar(self, msg):
         self.progressBar.setValue(int(msg))
+
+    # 一轮检查完成，按钮变成清空历史功能
+    def call_back_toChange(self):
+        self.pushButton_2.setEnabled(True)
 
     @pyqtSlot(bool)
     def on_pushButton_clicked(self):

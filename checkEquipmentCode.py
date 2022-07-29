@@ -17,6 +17,7 @@ class checkCode(QtCore.QThread):
     # 通过类成员对象定义信号对象
     _signal_toTextEdit = pyqtSignal(str)
     _signal_toProgressBar = pyqtSignal(int)
+    _signal_toChange = pyqtSignal()
 
     def __init__(self, uncheckedFilePath):
         super(checkCode, self).__init__()
@@ -30,6 +31,7 @@ class checkCode(QtCore.QThread):
         self.mainlogic()
         self.outputTXT()
         self._signal_toProgressBar.emit(100)
+        self.clear()
 
 
     def readFile(self, uncheckedFilePath):
@@ -96,6 +98,7 @@ class checkCode(QtCore.QThread):
 
         # 全部sheet一起检查设备层级
         self.SBCJCheck_ALLsheet()
+        self.signal_toChange.emit()
 
     def setError(self, sheet_name, num, errorType, errorCode, errorContent):
         error = {'sheet': sheet_name,
@@ -457,12 +460,26 @@ class checkCode(QtCore.QThread):
 
 
 
+    # 保存到桌面
     def outputTXT(self):
         desktop_path = os.path.join(os.path.expanduser('~'), "Desktop/")
         full_path = desktop_path + self.uncheckedFilePath.split('/')[-1].split('.')[0] + '检查结果.xlsx'  # 也可以创建一个.doc的word文档
-        pd.DataFrame(self.checkData).to_excel(full_path, encoding="utf_8_sig")
+        savedf = pd.DataFrame(self.checkData, index=list(range(1, 1 + len(self.checkData))))
+        savedf.to_excel(full_path, encoding="utf_8_sig")
 
         self._signal_toTextEdit.emit('*已生成检查结果到桌面*')
+
+    # 清空变量
+    def clear(self):
+        self.XTM_tree_FD = []
+        self.XTM_tree_GF = []
+        self.SBM_tree = []
+        self.DC_type = ''
+        self.df = pd.DataFrame()
+        self.singlevalue = 0
+        self.pvalue = 0
+        self.uncheckedFilePath = ''
+        self.checkData.clear()
 
     @property
     def signal_toTextEdit(self):
@@ -471,5 +488,9 @@ class checkCode(QtCore.QThread):
     @property
     def signal_toProgressBar(self):
         return self._signal_toProgressBar
+
+    @property
+    def signal_toChange(self):
+        return self._signal_toChange
 
 
