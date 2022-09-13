@@ -95,6 +95,8 @@ class checkCode(QtCore.QThread):
             self.reProgressBarvalue()
             self.SBCJCheck(sheet_name, sheet)
             self.reProgressBarvalue()
+            self.SJSBBMCheck(sheet_name, sheet)
+            self.reProgressBarvalue()
 
         # 全部sheet一起检查设备层级
         self.SBCJCheck_ALLsheet()
@@ -437,6 +439,24 @@ class checkCode(QtCore.QThread):
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
 
+    def SJSBBMCheck(self, sheet_name, sheet):
+        # n级设备码的上级设备码，必须存在于n-1级的设备码中
+        try:
+            self._signal_toTextEdit.emit('################开始上级设备层级检查################')
+            for cj in range(2, 6):  # 循环层级
+                shangji = sheet[sheet['设备层级'] == cj-1]  # 上级层级
+                dangqian = sheet[sheet['设备层级'] == cj]  # 当前层级
+                # print(dangqian)
+                for index, row in dangqian.iterrows():
+                    if not(row['上级设备编码'] in shangji['组合'].to_list()):
+                        self._signal_toTextEdit.emit(
+                            '上级设备编码在'+str(cj-1)+'级编码列表中不存在！ 序号：' + str(row['序号']) + ' 上级设备编码：' + str(row['上级设备编码']))
+                        self.setError(sheet_name, str(row['序号']), '上级设备编码', str(row['上级设备编码']),
+                                      '上级设备编码在'+str(cj-1)+'级编码列表中不存在！')
+            self._signal_toTextEdit.emit('################完成上级设备层级前缀检查################')
+        except Exception as e:
+            self._signal_toTextEdit.emit(str(e.args))
+
     def SBCJCheck_ALLsheet(self):
         try:
             self._signal_toTextEdit.emit('################开始整张excel设备层级检查################')
@@ -457,8 +477,6 @@ class checkCode(QtCore.QThread):
             self._signal_toTextEdit.emit('################完成整张excel设备层级检查################')
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
-
-
 
     # 保存到桌面
     def outputTXT(self):
