@@ -95,6 +95,8 @@ class checkCode(QtCore.QThread):
             self.reProgressBarvalue()
             self.SBCJCheck(sheet_name, sheet)
             self.reProgressBarvalue()
+            self.SJSBBMCheck(sheet_name, sheet)
+            self.reProgressBarvalue()
 
         # 全部sheet一起检查设备层级
         self.SBCJCheck_ALLsheet()
@@ -131,12 +133,12 @@ class checkCode(QtCore.QThread):
             for index, row in containO.iterrows():
                 self._signal_toTextEdit.emit('包含字母欧（O）的记录：')
                 self._signal_toTextEdit.emit('序号：' + str(row['序号']) + ' 组合：' + str(row['组合']))
-                self.setError(sheet_name, str(row['序号']), '字母欧（O）和数字0', str(row['组合']), '')
+                self.setError(sheet_name, str(row['序号']), '字母欧（O）和数字0', str(row['组合']), '将字母O改成数字0')
             self._signal_toTextEdit.emit('################完成字母欧（O）和数字0检查################')
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
 
-    def factoryCodeCheck(self, sheet_name, sheet):  # 重码检查
+    def factoryCodeCheck(self, sheet_name, sheet):  # 工厂码检查
         try:
             self._signal_toTextEdit.emit('################开始工厂码检查################')
             groupby_GCM = sheet.groupby('工厂码U1')
@@ -147,20 +149,20 @@ class checkCode(QtCore.QThread):
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
 
-    def QCMCodeCheck(self, sheet_name, sheet):  # 重码检查
+    def QCMCodeCheck(self, sheet_name, sheet):  # 全厂码检查
         try:
             self._signal_toTextEdit.emit('################开始全厂码检查################')
             groupby_QCM = sheet.groupby('全厂码F0')
             for name, group in groupby_QCM:
-                if not (name[0] == 'T' or name[0] == 'G'):
-                    self._signal_toTextEdit.emit('错误全厂码：' + name+' 全厂码首字母不为G或T，请检查全厂码F0首字母')
-                    self.setError(sheet_name, '', '全厂码', name, '全厂码首字母不为G或T，请检查全厂码F0首字母')
+                if not (name[0] == 'T' or name[0] == 'G' or name[0] == 'K' or name[0] == 'W'):
+                    self._signal_toTextEdit.emit('错误全厂码：' + name+' 全厂码首字母应为G/T/K/W，请检查全厂码F0首字母')
+                    self.setError(sheet_name, '', '全厂码', name, '全厂码首字母应为G/T/K/W，请检查全厂码F0首字母')
                 if not (name[1:].isdigit()):
-                    self._signal_toTextEdit.emit('错误全厂码：' + name+' 全厂码除第一位外不为数字，请调整为数字')
-                    self.setError(sheet_name, '', '全厂码', name, '全厂码除第一位外不为数字，请调整为数字')
+                    self._signal_toTextEdit.emit('错误全厂码：' + name+' 全厂码除第一位外应为数字，请调整为数字')
+                    self.setError(sheet_name, '', '全厂码', name, '全厂码除第一位外应为数字，请调整为数字')
                 if not len(name) == 3:
-                    self._signal_toTextEdit.emit('错误全厂码：' + name+' 全厂码长度不为3，请调整全厂码F0长度为3')
-                    self.setError(sheet_name, '', '全厂码', name, '全厂码长度不为3，请调整全厂码F0长度为3')
+                    self._signal_toTextEdit.emit('错误全厂码：' + name+' 全厂码长度应为3，请调整全厂码F0长度为3')
+                    self.setError(sheet_name, '', '全厂码', name, '全厂码长度应为3，请调整全厂码F0长度为3')
 
             self._signal_toTextEdit.emit(str(groupby_QCM.size()))
             self._signal_toTextEdit.emit('全厂码个数：' + str(groupby_QCM.ngroups))
@@ -171,7 +173,7 @@ class checkCode(QtCore.QThread):
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
 
-    def XTMCodeCheck(self, sheet_name, sheet):  # 重码检查
+    def XTMCodeCheck(self, sheet_name, sheet):  # 系统码检查
         try:
             self._signal_toTextEdit.emit('################开始系统码检查################')
             groupby_XTM = sheet.groupby('系统码F1')
@@ -210,7 +212,7 @@ class checkCode(QtCore.QThread):
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
 
-    def SBMCodeCheck(self, sheet_name, sheet):  # 重码检查
+    def SBMCodeCheck(self, sheet_name, sheet):  # 设备码检查
         try:
             self._signal_toTextEdit.emit('################开始设备码检查################')
             # 风电设备码全部为2个字母+3位数字
@@ -229,13 +231,13 @@ class checkCode(QtCore.QThread):
             # 所用设备码均在设备码模板中有
             tree_tmp = self.SBM_tree['设备/产品分类码'].to_list()
 
-            # 检查设备码是否在树状图中
+            # 检查设备码是否在索引中
             for index, row in sheet.iterrows():
                 if not (isinstance(row['设备码F2'], str)):  # 跳过NAN空值
                     continue
                 if not (row['设备码F2'][0:2] in tree_tmp):
                     self._signal_toTextEdit.emit('设备码在设备码索引模板中不存在！序号：' + str(row['序号']) + ' 设备码F2：' + str(row['设备码F2']))
-                    self.setError(sheet_name, str(row['序号']), '设备码', str(row['设备码F2']), '设备码在设备码索引模板中不存在！')
+                    self.setError(sheet_name, str(row['序号']), '设备码', str(row['设备码F2']), '请查询设备码索引，并使用正确的设备码')
             # 光伏逆变器、汇流箱、组串和支架等有特殊规则，按其规则仔细检查
             SBM_list = []
             for name, group in groupby_SBM:
@@ -341,7 +343,7 @@ class checkCode(QtCore.QThread):
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
 
-    def CPMCodeCheck(self, sheet_name, sheet):  # 重码检查
+    def CPMCodeCheck(self, sheet_name, sheet):  # 产品码检查
         try:
             self._signal_toTextEdit.emit('################开始产品码检查################')
             # 前两位
@@ -354,14 +356,14 @@ class checkCode(QtCore.QThread):
                 if not (row['产品码P1'][0:2] in tree_tmp):
                     self._signal_toTextEdit.emit('产品码P1在设备码索引模板中不存在！ 序号：' + str(row['序号']) + ' 产品码P1：' + str(row['产品码P1']))
                     self.setError(sheet_name, str(row['序号']), '产品码P1', str(row['产品码P1']),
-                                  '产品码P1在设备码索引模板中不存在！')
+                                  '请查询产品码索引，并使用正确的产品码P1！')
 
                 if not (isinstance(row['产品码P2'], str)):  # 跳过NAN空值
                     continue
                 if not (row['产品码P2'][0:2] in tree_tmp):
                     self._signal_toTextEdit.emit('产品码P2在设备码索引模板中不存在！ 序号：' + str(row['序号'])+ '产品码P1：'+ str(row['产品码P2']))
                     self.setError(sheet_name, str(row['序号']), '产品码P2', str(row['产品码P2']),
-                                  '产品码P2在设备码索引模板中不存在！')
+                                  '请查询产品码索引，并使用正确的产品码P2！')
             # 后2-3位
             tmpsheet = sheet.fillna('-')
             for index, row in tmpsheet.iterrows():
@@ -403,7 +405,7 @@ class checkCode(QtCore.QThread):
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
 
-    def SBCJCheck(self, sheet_name, sheet):  # 重码检查
+    def SBCJCheck(self, sheet_name, sheet):  # 设备层检查
         try:
             self._signal_toTextEdit.emit('################开始设备层级检查################')
             # 筛选查看“设备层级”列，下拉选项中有且只有1~5级
@@ -426,14 +428,32 @@ class checkCode(QtCore.QThread):
                 for cjEle in CJM_name_list[0:sbcj]:  # 遍历应该有内容的层级
                     if (row[cjEle + ''] != row[cjEle]):  # 为nan
                         self._signal_toTextEdit.emit('序号：' + str(numb) + '设备层级错误' + ' 设备码组合：' + str(row['组合']))
-                        self.setError(sheet_name, str(numb), '设备层级', '', '设备层级错误' + '设备码组合：' + str(row['组合']))
+                        self.setError(sheet_name, str(numb), '设备层级', '设备层级不匹配' + '设备码组合：' + str(row['组合']), '核实填写正确的设备层级')
 
                 for cjEle in CJM_name_list[sbcj:]:  # 遍历不应该有内容的层级
                     if not (row[cjEle] != row[cjEle]):  # 不为nan
                         self._signal_toTextEdit.emit('序号：' + str(numb) + '设备层级错误' + '设备码组合：' + str(row['组合']))
-                        self.setError(sheet_name, str(numb), '设备层级', '',
-                                      '设备层级错误' + ' 设备码组合：' + str(row['组合']))
+                        self.setError(sheet_name, str(numb), '设备层级', '设备层级不匹配' + ' 设备码组合：' + str(row['组合']),
+                                      '核实填写正确的设备层级')
             self._signal_toTextEdit.emit('################完成设备层级检查################')
+        except Exception as e:
+            self._signal_toTextEdit.emit(str(e.args))
+
+    def SJSBBMCheck(self, sheet_name, sheet):
+        # n级设备码的上级设备码，必须存在于n-1级的设备码中
+        try:
+            self._signal_toTextEdit.emit('################开始上级设备层级检查################')
+            for cj in range(3, 6):  # 循环层级
+                shangji = sheet[sheet['设备层级'] == cj-1]  # 上级层级
+                dangqian = sheet[sheet['设备层级'] == cj]  # 当前层级
+                # print(dangqian)
+                for index, row in dangqian.iterrows():
+                    if not(row['上级设备编码'] in shangji['组合'].to_list()):
+                        self._signal_toTextEdit.emit(
+                            '缺少上级设备编码！ 序号：' + str(row['序号']) + ' 上级设备编码：' + str(row['上级设备编码']))
+                        self.setError(sheet_name, str(row['序号']), '缺少上级设备编码', str(row['组合']),
+                                      '核实错误原因并修改')
+            self._signal_toTextEdit.emit('################完成上级设备层级前缀检查################')
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
 
@@ -451,14 +471,12 @@ class checkCode(QtCore.QThread):
                 if not (name in [1, 2, 3, 4, 5]):
                     self._signal_toTextEdit.emit('错误的层级' + str(name) + '设备层级有且只有1~5级')
                     self.setError('', '', '设备层级', '', '设备层级有且只有1~5级')
-            if not (Sum_CJ == 15):
-                self._signal_toTextEdit.emit('缺少层级，设备层级有且只有1~5级')
-                self.setError('', '', '设备层级', '', '缺少层级，设备层级有且只有1~5级')
+            # if not (Sum_CJ == 15):
+            #     self._signal_toTextEdit.emit('缺少层级，设备层级有且只有1~5级')
+            #     self.setError('', '', '设备层级', '', '缺少层级，设备层级有且只有1~5级')
             self._signal_toTextEdit.emit('################完成整张excel设备层级检查################')
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
-
-
 
     # 保存到桌面
     def outputTXT(self):
