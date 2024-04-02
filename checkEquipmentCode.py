@@ -5,8 +5,8 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal
 
 class checkCode(QtCore.QThread):
-    XTM_tree_FD = []
-    XTM_tree_GF = []
+    XTM_tree_FD = []  #系统码树状图_风电
+    XTM_tree_GF = []  #系统码树状图_光伏
     SBM_tree = []
     DC_type = ''
     df = pd.DataFrame()
@@ -29,7 +29,7 @@ class checkCode(QtCore.QThread):
     def run(self):
         self.readFile(self.uncheckedFilePath)
         self.mainlogic()
-        self.outputTXT()
+        self.outputTXT(self.uncheckedFilePath)
         self._signal_toProgressBar.emit(100)
         self.clear()
 
@@ -154,15 +154,15 @@ class checkCode(QtCore.QThread):
             self._signal_toTextEdit.emit('################开始全厂码检查################')
             groupby_QCM = sheet.groupby('全厂码F0')
             for name, group in groupby_QCM:
-                if not (name[0] == 'T' or name[0] == 'G' or name[0] == 'K' or name[0] == 'W'):
-                    self._signal_toTextEdit.emit('错误全厂码：' + name+' 全厂码首字母应为G/T/K/W，请检查全厂码F0首字母')
-                    self.setError(sheet_name, '', '全厂码', name, '全厂码首字母应为G/T/K/W，请检查全厂码F0首字母')
+                if not (name[0] == 'T' or name[0] == 'G' or name[0] == 'K' or name[0] == 'W'or name[0] == 'C'):
+                    self._signal_toTextEdit.emit('错误全厂码：' + name+' 全厂码首字母应为G/T/K/W/C，请检查全厂码首字母')
+                    self.setError(sheet_name, '', '全厂码', name, '全厂码首字母应为G/T/K/W/C，请检查全厂码首字母')
                 if not (name[1:].isdigit()):
                     self._signal_toTextEdit.emit('错误全厂码：' + name+' 全厂码除第一位外应为数字，请调整为数字')
                     self.setError(sheet_name, '', '全厂码', name, '全厂码除第一位外应为数字，请调整为数字')
                 if not len(name) == 3:
-                    self._signal_toTextEdit.emit('错误全厂码：' + name+' 全厂码长度应为3，请调整全厂码F0长度为3')
-                    self.setError(sheet_name, '', '全厂码', name, '全厂码长度应为3，请调整全厂码F0长度为3')
+                    self._signal_toTextEdit.emit('错误全厂码：' + name+' 全厂码长度应为3，请调整全厂码长度为3')
+                    self.setError(sheet_name, '', '全厂码', name, '全厂码长度应为3，请调整全厂码长度为3')
 
             self._signal_toTextEdit.emit(str(groupby_QCM.size()))
             self._signal_toTextEdit.emit('全厂码个数：' + str(groupby_QCM.ngroups))
@@ -226,8 +226,8 @@ class checkCode(QtCore.QThread):
                         self._signal_toTextEdit.emit('错误设备码：' + name + ' 设备码后3位应全为数字')
                         self.setError(sheet_name, '', '设备码', name, '设备码后3位应全为数字')
                     if not len(name) == 5:
-                        self._signal_toTextEdit.emit('错误设备码：' + name + ' 设备码长度不为5，请调整设备码长度为5')
-                        self.setError(sheet_name, '', '设备码', name, '设备码长度不为5，请调整设备码长度为5')
+                        self._signal_toTextEdit.emit('错误设备码：' + name + ' 设备码应为2位字母+3位数字')
+                        self.setError(sheet_name, '', '设备码', name, '设备码应为2位字母+3位数字')
             # 所用设备码均在设备码模板中有
             tree_tmp = self.SBM_tree['设备/产品分类码'].to_list()
 
@@ -291,9 +291,9 @@ class checkCode(QtCore.QThread):
                                         self.setError(sheet_name, str(numb), '设备码', str(name),
                                                       '有逆变器' + 'TB' + str(name[2:4]) + '缺少对应4位汇流箱')
                         else:  # 光伏组件长度错误
-                            self._signal_toTextEdit.emit('错误设备码F2：' + str(name)+'序号：' + str(numb) + '光伏组件设备码F2数字部分应该为4位或6位')
+                            self._signal_toTextEdit.emit('错误设备码：' + str(name)+'序号：' + str(numb) + '光伏组件设备码F2数字部分应该为4位或6位')
                             self.setError(sheet_name, str(numb), '设备码', str(name),
-                                          '光伏组件设备码F2数字部分应该为4位或6位')
+                                          '光伏组件设备码数字部分应该为4位或6位')
                     ####################### 逆变器 #######################
                     elif name[0:2] == 'TB' and '逆变器' in row['设备名称']:  # 逆变器
                         if len(name[2:]) == 4:
@@ -303,9 +303,9 @@ class checkCode(QtCore.QThread):
                                 self.setError(sheet_name, str(numb), '设备码', str(name),
                                               '缺少对应汇流箱' + 'UC' + str(name[2:4]))
                         elif not (len(name[2:]) == 2):  # 逆变器长度错误
-                            self._signal_toTextEdit.emit('序号：' + str(numb) + '错误设备码F2：' + str(name) + '逆变器设备码F2数字部分应该为2位或4位')
+                            self._signal_toTextEdit.emit('序号：' + str(numb) + '错误设备码：' + str(name) + '逆变器设备码数字部分应该为2位或4位')
                             self.setError(sheet_name, str(numb), '设备码', str(name),
-                                          '逆变器设备码F2数字部分应该为2位或4位')
+                                          '逆变器设备码数字部分应该为2位或4位')
                     ####################### 汇流箱 #######################
                     elif name[0:2] == 'UC' and '汇流箱' in row['设备名称']:  # 汇流箱
                         if len(name[2:]) == 4:
@@ -315,28 +315,28 @@ class checkCode(QtCore.QThread):
                                 self.setError(sheet_name, str(numb), '设备码', str(name),
                                               '光伏组件设备码' + str(name) + '缺少对应汇流箱' + 'TB' + str(name[2:4]))
                         elif not (len(name[2:]) == 2):  # 汇流箱长度错误
-                            self._signal_toTextEdit.emit('序号：' + str(numb) + '错误设备码F2：' + str(name) + '汇流箱设备码F2数字部分应该为2位或4位')
+                            self._signal_toTextEdit.emit('序号：' + str(numb) + '错误设备码：' + str(name) + '汇流箱设备码数字部分应该为2位或4位')
                             self.setError(sheet_name, str(numb), '设备码', str(name),
-                                          '汇流箱设备码F2数字部分应该为2位或4位')
+                                          '汇流箱设备码数字部分应该为2位或4位')
                     ####################### 其他 #######################
                     elif not name[0:2] == 'UR':
                         if not (name[0:2].isalpha()):
-                            self._signal_toTextEdit.emit('序号：' + str(numb) + '错误设备码F2：' + str(name) + '设备码F2前2位应全为字母')
+                            self._signal_toTextEdit.emit('序号：' + str(numb) + '错误设备码：' + str(name) + '设备码前2位应全为字母')
                             self.setError(sheet_name, str(numb), '设备码', str(name),
-                                          '设备码F2前2位应全为字母')
+                                          '设备码前2位应全为字母')
                         if not (name[2:5].isdigit()):
-                            self._signal_toTextEdit.emit('序号：' + str(numb) + '错误设备码F2：' + str(name) + '设备码F2后3位应全为数字')
+                            self._signal_toTextEdit.emit('序号：' + str(numb) + '错误设备码：' + str(name) + '设备码后3位应全为数字')
                             self.setError(sheet_name, str(numb), '设备码', str(name),
-                                          '设备码F2后3位应全为数字')
+                                          '设备码后3位应全为数字')
                         if not len(name) == 5:
-                            self._signal_toTextEdit.emit('序号：' + str(numb) + '错误设备码F2：' + str(name) + '设备码F2长度不为5，请调整设备码F2长度为5')
+                            self._signal_toTextEdit.emit('序号：' + str(numb) + '错误设备码：' + str(name) + '设备码长度不为5，请调整设备码长度为5')
                             self.setError(sheet_name, str(numb), '设备码', str(name),
-                                          '设备码F2长度不为5，请调整设备码F2长度为5')
+                                          '设备码长度不为5，请调整设备码长度为5')
                 ####################### 支架 #######################
                 for index, row in sheet.iterrows():
                     if name[0:2] == 'UR':  # 支架
                         if not ((GC_bit4 and len(name[2:]) == 4) or (GC_bit6 and len(name[2:]) == 6)):
-                            self._signal_toTextEdit.emit('序号：' + str(numb) + '错误设备码F2：' + str(name) + '支架编码长度必须与光伏组件统一')
+                            self._signal_toTextEdit.emit('序号：' + str(numb) + '错误设备码：' + str(name) + '支架编码长度必须与光伏组件统一')
                             self.setError(sheet_name, str(numb), '设备码', str(name),
                                           '支架编码长度必须与光伏组件统一')
             self._signal_toTextEdit.emit('################完成设备码检查################')
@@ -443,6 +443,17 @@ class checkCode(QtCore.QThread):
         # n级设备码的上级设备码，必须存在于n-1级的设备码中
         try:
             self._signal_toTextEdit.emit('################开始上级设备层级检查################')
+            # 2层特殊判断
+            cj2 = sheet[sheet['设备层级'] == 2]  # 当前层级为2
+            for index, row in cj2.iterrows():
+                print(row['上级设备编码'])
+                print(row['工厂码U1'])
+                if row['上级设备编码'].strip() != row['工厂码U1'].strip():
+                    self._signal_toTextEdit.emit(
+                        '上级设备编码错误！ 序号：' + str(row['序号']) + ' 上级设备编码：' + str(row['上级设备编码']))
+                    self.setError(sheet_name, str(row['序号']), '上级设备编码错误', str(row['组合']),
+                                  '建议核查上级编码是否漏编或O列上级编码是否填错')
+            # 3-6层
             for cj in range(3, 6):  # 循环层级
                 shangji = sheet[sheet['设备层级'] == cj-1]  # 上级层级
                 dangqian = sheet[sheet['设备层级'] == cj]  # 当前层级
@@ -450,9 +461,9 @@ class checkCode(QtCore.QThread):
                 for index, row in dangqian.iterrows():
                     if not(row['上级设备编码'] in shangji['组合'].to_list()):
                         self._signal_toTextEdit.emit(
-                            '缺少上级设备编码！ 序号：' + str(row['序号']) + ' 上级设备编码：' + str(row['上级设备编码']))
-                        self.setError(sheet_name, str(row['序号']), '缺少上级设备编码', str(row['组合']),
-                                      '核实错误原因并修改')
+                            '上级设备编码错误！ 序号：' + str(row['序号']) + ' 上级设备编码：' + str(row['上级设备编码']))
+                        self.setError(sheet_name, str(row['序号']), '上级设备编码错误', str(row['组合']),
+                                      '建议核查上级编码是否漏编或O列上级编码是否填错')
             self._signal_toTextEdit.emit('################完成上级设备层级前缀检查################')
         except Exception as e:
             self._signal_toTextEdit.emit(str(e.args))
@@ -479,13 +490,14 @@ class checkCode(QtCore.QThread):
             self._signal_toTextEdit.emit(str(e.args))
 
     # 保存到桌面
-    def outputTXT(self):
-        desktop_path = os.path.join(os.path.expanduser('~'), "Desktop/")
-        full_path = desktop_path + self.uncheckedFilePath.split('/')[-1].split('.')[0] + '检查结果.xlsx'  # 也可以创建一个.doc的word文档
+    def outputTXT(self, uncheckedFilePath):
+        # desktop_path = os.path.join(os.path.abspath(__file__))  # __file__是一个内置变量，表示当前文件的路径
+        # print(uncheckedFilePath)
+        full_path = self.uncheckedFilePath.split('.')[0] + '检查结果.xlsx'  # 也可以创建一个.doc的word文档
         savedf = pd.DataFrame(self.checkData, index=list(range(1, 1 + len(self.checkData))))
         savedf.to_excel(full_path, encoding="utf_8_sig")
 
-        self._signal_toTextEdit.emit('*已生成检查结果到桌面*')
+        self._signal_toTextEdit.emit('*已生成检查结果到可执行文件目录*')
 
     # 清空变量
     def clear(self):
